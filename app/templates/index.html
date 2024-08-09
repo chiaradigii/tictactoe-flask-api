@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            text-align: center;
+        }
+        h1 {
+            text-align: center;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            cursor: pointer;
+            border: 2px solid #333;
+        }
+        .disabled {
+            pointer-events: none;
+            background-color: #ddd;
+        }
+        .status {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        .button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic-Tac-Toe</h1>
+        <div id="board"></div>
+        <div class="status" id="status"></div>
+        <button id="reset" class="button">Reset Game</button>
+    </div>
+
+    <script>
+        let gameId;
+        let currentPlayer = "X";
+        const board = document.getElementById('board');
+        const statusText = document.getElementById('status');
+
+        function createGame() {
+            fetch('/create', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    gameId = data.gameId;
+                    initializeBoard();
+                    statusText.textContent = "Player " + currentPlayer + "'s turn";
+                });
+        }
+
+        function initializeBoard() {
+            board.innerHTML = '';
+            for (let y = 0; y < 3; y++) {
+                for (let x = 0; x < 3; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.addEventListener('click', makeMove);
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        function makeMove(event) {
+            const x = event.target.dataset.x;
+            const y = event.target.dataset.y;
+
+            fetch('/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gameId, playerId: currentPlayer, square: { x, y } })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    event.target.textContent = currentPlayer;
+                    event.target.classList.add('disabled');
+                    if (data.status.includes("wins") || data.status === "draw") {
+                        statusText.textContent = data.status;
+                        disableBoard();
+                    } else {
+                        currentPlayer = currentPlayer === "X" ? "O" : "X";
+                        statusText.textContent = "Player " + currentPlayer + "'s turn";
+                    }
+                }
+            });
+        }
+
+        function disableBoard() {
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.classList.add('disabled');
+            });
+        }
+
+        document.getElementById('reset').addEventListener('click', createGame);
+
+        // Start the game
+        createGame();
+    </script>
+</body>
+</html>
