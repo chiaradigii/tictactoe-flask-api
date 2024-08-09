@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Tic-Tac-Toe</title>
+    <title>Tic-Tac-Toe Game</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,124 +12,125 @@
         .container {
             max-width: 600px;
             margin: auto;
+            text-align: center;
         }
         h1 {
             text-align: center;
         }
-        form {
-            margin-bottom: 20px;
+        #board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin: 20px auto;
         }
-        label {
-            display: block;
-            margin-top: 10px;
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            cursor: pointer;
+            border: 2px solid #333;
         }
-        input[type="text"] {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
+        .disabled {
+            pointer-events: none;
+            background-color: #ddd;
         }
-        input[type="submit"] {
-            margin-top: 10px;
-            padding: 10px;
+        .status {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        .button {
+            padding: 10px 20px;
             background-color: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
-            width: 100%;
+            margin-top: 20px;
         }
-        input[type="submit"]:hover {
+        .button:hover {
             background-color: #45a049;
-        }
-        .response {
-            background-color: #f4f4f4;
-            padding: 10px;
-            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to the Tic-Tac-Toe API!</h1>
-        <p>Use the forms below to interact with the API.</p>
-
-        <!-- Create Game -->
-        <h2>Create a New Game</h2>
-        <form id="create-game-form">
-            <input type="submit" value="Create Game">
-        </form>
-        <div class="response" id="create-game-response"></div>
-
-        <!-- Make a Move -->
-        <h2>Make a Move</h2>
-        <form id="make-move-form">
-            <label for="gameId">Game ID:</label>
-            <input type="text" id="gameId" name="gameId" required>
-
-            <label for="playerId">Player ID (X/O):</label>
-            <input type="text" id="playerId" name="playerId" required>
-
-            <label for="x">X Coordinate (0-2):</label>
-            <input type="text" id="x" name="x" required>
-
-            <label for="y">Y Coordinate (0-2):</label>
-            <input type="text" id="y" name="y" required>
-
-            <input type="submit" value="Make Move">
-        </form>
-        <div class="response" id="make-move-response"></div>
-
-        <!-- Check Game Status -->
-        <h2>Check Game Status</h2>
-        <form id="check-status-form">
-            <label for="statusGameId">Game ID:</label>
-            <input type="text" id="statusGameId" name="statusGameId" required>
-
-            <input type="submit" value="Check Status">
-        </form>
-        <div class="response" id="check-status-response"></div>
+        <h1>Tic-Tac-Toe</h1>
+        <div id="board"></div>
+        <div class="status" id="status"></div>
+        <button id="reset" class="button">Reset Game</button>
     </div>
 
     <script>
-        // Handle Create Game
-        document.getElementById('create-game-form').onsubmit = function(event) {
-            event.preventDefault();
+        let gameId;
+        let currentPlayer = "X";
+        const board = document.getElementById('board');
+        const statusText = document.getElementById('status');
+
+        function createGame() {
             fetch('/create', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('create-game-response').innerText = 'Game created with ID: ' + data.gameId;
+                    gameId = data.gameId;
+                    initializeBoard();
+                    statusText.textContent = "Player " + currentPlayer + "'s turn";
                 });
-        };
+        }
 
-        // Handle Make Move
-        document.getElementById('make-move-form').onsubmit = function(event) {
-            event.preventDefault();
-            const gameId = document.getElementById('gameId').value;
-            const playerId = document.getElementById('playerId').value;
-            const x = document.getElementById('x').value;
-            const y = document.getElementById('y').value;
+        function initializeBoard() {
+            board.innerHTML = '';
+            for (let y = 0; y < 3; y++) {
+                for (let x = 0; x < 3; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.addEventListener('click', makeMove);
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        function makeMove(event) {
+            const x = event.target.dataset.x;
+            const y = event.target.dataset.y;
 
             fetch('/move', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ gameId, playerId, square: { x, y } })
+                body: JSON.stringify({ gameId, playerId: currentPlayer, square: { x, y } })
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('make-move-response').innerText = 'Move made. Status: ' + data.status;
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    event.target.textContent = currentPlayer;
+                    event.target.classList.add('disabled');
+                    if (data.status.includes("wins") || data.status === "draw") {
+                        statusText.textContent = data.status;
+                        disableBoard();
+                    } else {
+                        currentPlayer = currentPlayer === "X" ? "O" : "X";
+                        statusText.textContent = "Player " + currentPlayer + "'s turn";
+                    }
+                }
             });
-        };
+        }
 
-        // Handle Check Status
-        document.getElementById('check-status-form').onsubmit = function(event) {
-            event.preventDefault();
-            const gameId = document.getElementById('statusGameId').value;
+        function disableBoard() {
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.classList.add('disabled');
+            });
+        }
 
-            fetch(`/status?gameId=${gameId}`, { method: 'GET' })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('check-status-response').innerText = 'Game Status: ' + data.status + '\nBoard: ' + data.board;
-                });
-        };
+        document.getElementById('reset').addEventListener('click', createGame);
+
+        // Start the game
+        createGame();
     </script>
 </body>
 </html>
