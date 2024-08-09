@@ -12,13 +12,16 @@ def register_routes(app):
     def create_game():
         new_game = Game()
         db.session.add(new_game)
+        app.logger.info(f"New game created with id {new_game.id}")
         db.session.commit()
         return jsonify({"gameId": new_game.id}), 200
+        
 
     @app.route('/move', methods=['POST'])
     def make_move():
         try:
             data = request.get_json()
+            app.logger.info(f"Received move request: {data}")
             game_id = data.get("gameId")
             player_id = data.get("playerId")
             x = int(data["square"]["x"])  # Ensure x is an integer
@@ -51,8 +54,10 @@ def register_routes(app):
                 game.current_player = "O" if player_id == "X" else "X"
 
             db.session.commit()
+            app.logger.info(f"Move successful. Game status: {game.status}")
             return jsonify({"status": game.status, "board": game.board_state}), 200
         except Exception as e:
+            app.logger.error(f"Error making move: {e}")
             return jsonify({"error": str(e)}), 500
 
 
@@ -61,8 +66,10 @@ def register_routes(app):
         game_id = request.args.get("gameId")
         game = Game.query.get(game_id)
         if not game:
+            app.logger.error(f"Game with id {game_id} not found")
             return abort(404, description="Game not found")
-
+        
+        app.logger.info(f"Game status requested. Game status
         return jsonify({
             "board": game.board_state,
             "currentPlayer": game.current_player,
@@ -77,6 +84,8 @@ def register_routes(app):
         ]
         for condition in win_conditions:
             if all(board[i] == player for i in condition):
+                app.logger.info(f"Player {player} wins with {condition}")
                 return True
+        app.logger.info(f"Player {player} does not win")
         return False
 
