@@ -69,7 +69,7 @@ def register_routes(app):
             app.logger.error(f"Game with id {game_id} not found")
             return abort(404, description="Game not found")
         
-        app.logger.info(f"Game status requested. Game status
+        app.logger.info(f"Game status requested. Game status")
         return jsonify({
             "board": game.board_state,
             "currentPlayer": game.current_player,
