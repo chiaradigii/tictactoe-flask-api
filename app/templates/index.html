@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        input[type="submit"] {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .response {
+            background-color: #f4f4f4;
+            padding: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to the Tic-Tac-Toe API!</h1>
+        <p>Use the forms below to interact with the API.</p>
+
+        <!-- Create Game -->
+        <h2>Create a New Game</h2>
+        <form id="create-game-form">
+            <input type="submit" value="Create Game">
+        </form>
+        <div class="response" id="create-game-response"></div>
+
+        <!-- Make a Move -->
+        <h2>Make a Move</h2>
+        <form id="make-move-form">
+            <label for="gameId">Game ID:</label>
+            <input type="text" id="gameId" name="gameId" required>
+
+            <label for="playerId">Player ID (X/O):</label>
+            <input type="text" id="playerId" name="playerId" required>
+
+            <label for="x">X Coordinate (0-2):</label>
+            <input type="text" id="x" name="x" required>
+
+            <label for="y">Y Coordinate (0-2):</label>
+            <input type="text" id="y" name="y" required>
+
+            <input type="submit" value="Make Move">
+        </form>
+        <div class="response" id="make-move-response"></div>
+
+        <!-- Check Game Status -->
+        <h2>Check Game Status</h2>
+        <form id="check-status-form">
+            <label for="statusGameId">Game ID:</label>
+            <input type="text" id="statusGameId" name="statusGameId" required>
+
+            <input type="submit" value="Check Status">
+        </form>
+        <div class="response" id="check-status-response"></div>
+    </div>
+
+    <script>
+        // Handle Create Game
+        document.getElementById('create-game-form').onsubmit = function(event) {
+            event.preventDefault();
+            fetch('/create', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('create-game-response').innerText = 'Game created with ID: ' + data.gameId;
+                });
+        };
+
+        // Handle Make Move
+        document.getElementById('make-move-form').onsubmit = function(event) {
+            event.preventDefault();
+            const gameId = document.getElementById('gameId').value;
+            const playerId = document.getElementById('playerId').value;
+            const x = document.getElementById('x').value;
+            const y = document.getElementById('y').value;
+
+            fetch('/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gameId, playerId, square: { x, y } })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('make-move-response').innerText = 'Move made. Status: ' + data.status;
+            });
+        };
+
+        // Handle Check Status
+        document.getElementById('check-status-form').onsubmit = function(event) {
+            event.preventDefault();
+            const gameId = document.getElementById('statusGameId').value;
+
+            fetch(`/status?gameId=${gameId}`, { method: 'GET' })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('check-status-response').innerText = 'Game Status: ' + data.status + '\nBoard: ' + data.board;
+                });
+        };
+    </script>
+</body>
+</html>
