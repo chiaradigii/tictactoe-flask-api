@@ -22,31 +22,24 @@ def register_routes(app):
         try:
             data = request.get_json()
             app.logger.info(f"Received move request: {data}")
-            game_id = data.get("gameId")
-            player_id = data.get("playerId")
-            x = int(data["square"]["x"])  # Ensure x is an integer
-            y = int(data["square"]["y"])  # Ensure y is an integer
+            game_id, player_id = data.get("gameId"), data.get("playerId")
+            x, y = int(data["square"]["x"]), int(data["square"]["y"])
 
             game = Game.query.get(game_id)
             if not game:
                 return jsonify({"error": "Game not found"}), 404
-
             if game.status != "ongoing":
                 return jsonify({"error": "Game already completed"}), 400
 
             index = 3 * y + x
-            if game.board_state[index] != "-":
-                return jsonify({"error": "Square already taken"}), 400
-
-            if game.current_player != player_id:
-                return jsonify({"error": "It's not your turn"}), 400
+            if game.board_state[index] != "-" or game.current_player != player_id:
+                return jsonify({"error": "Invalid move"}), 400
 
             board = list(game.board_state)
             board[index] = player_id
             game.board_state = "".join(board)
 
-            # Check for win or draw
-            if check_win(board, player_id):
+           if check_win(board, player_id): # check for win or draw
                 game.status = f"{player_id} wins"
             elif "-" not in board:
                 game.status = "draw"
