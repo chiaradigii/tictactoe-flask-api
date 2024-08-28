@@ -1,6 +1,3 @@
-### 2. `TECHNICAL_DOCUMENTATION.md`
-
-
 # Tic-Tac-Toe API Technical Documentation
 
 **Author**: Chiara Di Giannantonio
